@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WildGuns — Attack Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c0a; --surface: #1a1714; --surface2: #242018; --border: #38332b;
+    --gold: #c9922a; --gold-light: #e8b84b; --gold-dim: #7a5618;
+    --red-light: #e74c3c; --text: #e8e0d0; --text-dim: #8a7f6e; --text-muted: #5a5244;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh;
+    background-image: radial-gradient(ellipse 80% 40% at 50% 0%, #2a1f0a18 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, #38332b12 39px, #38332b12 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, #38332b12 39px, #38332b12 40px);
+  }
+  header { border-bottom: 1px solid var(--border); padding: 1.1rem 1.5rem; display: flex; align-items: center; gap: 1rem; background: #12100d; }
+  .header-icon { font-size: 24px; color: var(--gold); line-height: 1; }
+  .header-title { font-family: 'Bebas Neue', cursive; font-size: 24px; letter-spacing: 0.08em; color: var(--gold-light); line-height: 1; }
+  .header-sub { font-size: 10px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+  .container { max-width: 540px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .sec-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px; }
+  .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .vrow { display: flex; gap: 8px; align-items: stretch; }
+  .vrow select { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 8px 10px; cursor: pointer; }
+  .vrow select:focus { outline: none; border-color: var(--gold-dim); }
+  .icon-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-size: 16px; width: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+  .icon-btn:hover { border-color: var(--gold-dim); color: var(--gold-light); }
+  .icon-btn.danger:hover { border-color: #c0392b; color: var(--red-light); }
+  .vcoords { margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted); }
+  .vcoords span { color: var(--gold); }
+  .coord-row { display: grid; grid-template-columns: 1fr 20px 1fr; gap: 6px; align-items: center; }
+  .csep { text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 18px; color: var(--text-muted); padding-top: 18px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--text-dim); letter-spacing: 0.05em; }
+  .field input[type="number"] { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 18px; padding: 7px 10px; width: 100%; text-align: center; transition: border-color 0.15s; -moz-appearance: textfield; }
+  .field input::-webkit-outer-spin-button, .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .field input:focus { outline: none; border-color: var(--gold-dim); background: #1f1c16; }
+  .time-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 8px; align-items: end; }
+  .now-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 7px 10px; cursor: pointer; white-space: nowrap; height: 38px; transition: all 0.15s; }
+  .now-btn:hover { border-color: var(--gold-dim); color: var(--gold-light); }
+  .calc-btn { width: 100%; background: var(--gold); border: none; border-radius: 6px; color: #0e0c0a; font-family: 'Bebas Neue', cursive; font-size: 20px; letter-spacing: 0.1em; padding: 13px; cursor: pointer; margin: 0.25rem 0 1rem; transition: background 0.15s, transform 0.1s; }
+  .calc-btn:hover { background: var(--gold-light); }
+  .calc-btn:active { transform: scale(0.99); }
+  .alert { display: none; background: #2a1208; border: 1px solid #7a2c1a; border-radius: 4px; padding: 0.6rem 0.75rem; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #e8a090; margin-bottom: 0.75rem; }
+  .alert.show { display: block; }
+  .result-panel { display: none; background: var(--surface); border: 1px solid var(--gold-dim); border-radius: 6px; overflow: hidden; }
+  .result-panel.show { display: block; }
+  .result-top { background: #1f1a10; border-bottom: 1px solid var(--border); padding: 1.25rem; text-align: center; }
+  .cd-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .cd-value { font-family: 'Bebas Neue', cursive; font-size: 52px; letter-spacing: 0.05em; color: var(--gold-light); line-height: 1; font-variant-numeric: tabular-nums; transition: color 0.3s; }
+  .cd-value.urgent { color: var(--red-light); }
+  .cd-value.now { color: var(--red-light); animation: pulse 0.5s infinite alternate; }
+  @keyframes pulse { from { opacity:1; } to { opacity:0.4; } }
+  .send-row { margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-dim); }
+  .send-row strong { color: var(--gold-light); font-size: 16px; font-weight: 500; }
+  .rbody { padding: 1rem 1.25rem; }
+  .rgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ritem { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 0.6rem 0.75rem; }
+  .rl { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+  .rv { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--text); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--gold-dim); border-radius: 8px; padding: 1.5rem; width: 340px; max-width: 100%; }
+  .modal h2 { font-family: 'Bebas Neue', cursive; font-size: 22px; color: var(--gold-light); letter-spacing: 0.08em; margin-bottom: 1rem; }
+  .mf { margin-bottom: 0.75rem; }
+  .mf label { display: block; font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 4px; }
+  .mf input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 16px; padding: 8px 12px; -moz-appearance: textfield; }
+  .mf input::-webkit-outer-spin-button, .mf input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .mf input:focus { outline: none; border-color: var(--gold-dim); }
+  .mcrow { display: grid; grid-template-columns: 1fr 16px 1fr; gap: 6px; align-items: center; }
+  .mcsep { text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 16px; color: var(--text-muted); }
+  .merr { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--red-light); margin-bottom: 0.5rem; display: none; }
+  .merr.show { display: block; }
+  .mbtns { display: flex; gap: 8px; margin-top: 1rem; }
+  .msave { flex: 1; background: var(--gold); border: none; border-radius: 4px; color: #0e0c0a; font-family: 'Bebas Neue', cursive; font-size: 18px; letter-spacing: 0.08em; padding: 9px; cursor: pointer; }
+  .msave:hover { background: var(--gold-light); }
+  .mcancel { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 9px 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-icon">&#10022;</div>
+  <div>
+    <div class="header-title">WildGuns Attack Timer</div>
+    <div class="header-sub">Conquistadores &middot; 257s por unidade</div>
+  </div>
+</header>
+<div class="container">
+  <div class="sec-label">Vila de origem</div>
+  <div class="card">
+    <div class="vrow">
+      <select id="vsel" onchange="onVillageChange()"><option value="">&#8212; escolhe uma vila &#8212;</option></select>
+      <button class="icon-btn" title="Adicionar vila" onclick="openModal('add')">+</button>
+      <button class="icon-btn" title="Editar vila" id="btn-edit" onclick="openModal('edit')">&#9998;</button>
+      <button class="icon-btn danger" title="Apagar vila" id="btn-delete" onclick="deleteVillage()">&#10005;</button>
+    </div>
+    <div class="vcoords" id="vcoords">Adiciona uma vila com o bot&#227;o +</div>
+  </div>
+  <div class="sec-label">Alvo</div>
+  <div class="card">
+    <div class="coord-row">
+      <div class="field"><label>X (alvo)</label><input type="number" id="tx" placeholder="201"></div>
+      <div class="csep">|</div>
+      <div class="field"><label>Y (alvo)</label><input type="number" id="ty" placeholder="194"></div>
+    </div>
+  </div>
+  <div class="sec-label">Hora de chegada desejada</div>
+  <div class="card">
+    <div class="time-grid">
+      <div class="field"><label>Horas</label><input type="number" id="ah" placeholder="14" min="0" max="23"></div>
+      <div class="field"><label>Minutos</label><input type="number" id="am" placeholder="30" min="0" max="59"></div>
+      <div class="field"><label>Segundos</label><input type="number" id="as" placeholder="00" min="0" max="59"></div>
+      <button class="now-btn" onclick="setNow()">agora</button>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calculate()">Calcular hora de envio</button>
+  <div class="alert" id="alert"></div>
+  <div class="result-panel" id="result">
+    <div class="result-top">
+      <div class="cd-label">envia em</div>
+      <div class="cd-value" id="countdown">--:--:--</div>
+      <div class="send-row">envia &#224;s <strong id="send-time">--:--:--</strong><span id="send-day"></span></div>
+    </div>
+    <div class="rbody">
+      <div class="rgrid">
+        <div class="ritem"><div class="rl">Dist&#226;ncia</div><div class="rv" id="r-dist">&#8212;</div></div>
+        <div class="ritem"><div class="rl">Tempo de viagem</div><div class="rv" id="r-travel">&#8212;</div></div>
+        <div class="ritem"><div class="rl">Vila</div><div class="rv" id="r-origin">&#8212;</div></div>
+        <div class="ritem"><div class="rl">Destino</div><div class="rv" id="r-dest">&#8212;</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">Nova Vila</h2>
+    <div class="mf"><label>Nome da vila</label><input type="text" id="m-name" placeholder="ex: Vila Principal" maxlength="24"></div>
+    <div class="mf">
+      <label>Coordenadas</label>
+      <div class="mcrow">
+        <input type="number" id="m-x" placeholder="X" style="text-align:center;">
+        <div class="mcsep">|</div>
+        <input type="number" id="m-y" placeholder="Y" style="text-align:center;">
+      </div>
+    </div>
+    <div class="merr" id="merr">Preenche todos os campos.</div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeModal()">cancelar</button>
+      <button class="msave" onclick="saveVillage()">Guardar</button>
+    </div>
+  </div>
+</div>
+<script>
+const SPEED=257,KEY='wg_villages';
+function pad(n){return String(Math.floor(Math.abs(n))).padStart(2,'0');}
+function fmtTime(d){return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());}
+function fmtDur(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=Math.floor(s%60);return h>0?h+'h '+pad(m)+'m '+pad(ss)+'s':pad(m)+'m '+pad(ss)+'s';}
+function getV(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch{return[];}}
+function setV(v){localStorage.setItem(KEY,JSON.stringify(v));}
+function renderSelect(keep){
+  var v=getV(),sel=document.getElementById('vsel');
+  sel.innerHTML='<option value="">&#8212; escolhe uma vila &#8212;</option>';
+  v.forEach(function(x,i){var o=document.createElement('option');o.value=i;o.textContent=x.name+'  ('+x.x+'|'+x.y+')';sel.appendChild(o);});
+  if(keep!==undefined&&v[keep])sel.value=keep;
+  onVillageChange();
+}
+function onVillageChange(){
+  var v=getV(),idx=parseInt(document.getElementById('vsel').value),has=!isNaN(idx)&&!!v[idx];
+  document.getElementById('btn-edit').style.opacity=has?'1':'0.3';
+  document.getElementById('btn-delete').style.opacity=has?'1':'0.3';
+  document.getElementById('vcoords').innerHTML=has?'Coordenadas: <span>'+v[idx].x+' | '+v[idx].y+'</span>':(v.length?'Seleciona uma vila':'Adiciona uma vila com o bot&#227;o +');
+  document.getElementById('result').className='result-panel';
+  document.getElementById('alert').className='alert';
+  if(cdInt){clearInterval(cdInt);cdInt=null;}
+}
+var modalMode='add';
+function openModal(mode){
+  modalMode=mode;
+  document.getElementById('merr').className='merr';
+  if(mode==='edit'){
+    var idx=parseInt(document.getElementById('vsel').value),v=getV()[idx];
+    if(!v)return;
+    document.getElementById('modal-title').textContent='Editar Vila';
+    document.getElementById('m-name').value=v.name;
+    document.getElementById('m-x').value=v.x;
+    document.getElementById('m-y').value=v.y;
+  }else{
+    document.getElementById('modal-title').textContent='Nova Vila';
+    document.getElementById('m-name').value='';
+    document.getElementById('m-x').value='';
+    document.getElementById('m-y').value='';
+  }
+  document.getElementById('modal').classList.add('show');
+  setTimeout(function(){document.getElementById('m-name').focus();},50);
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function saveVillage(){
+  var name=document.getElementById('m-name').value.trim(),x=document.getElementById('m-x').value,y=document.getElementById('m-y').value;
+  if(!name||x===''||y===''){document.getElementById('merr').className='merr show';return;}
+  var v=getV(),entry={name:name,x:parseFloat(x),y:parseFloat(y)},ti;
+  if(modalMode==='edit'){ti=parseInt(document.getElementById('vsel').value);v[ti]=entry;}
+  else{v.push(entry);ti=v.length-1;}
+  setV(v);closeModal();renderSelect(ti);
+}
+function deleteVillage(){
+  var idx=parseInt(document.getElementById('vsel').value),v=getV();
+  if(isNaN(idx)||!v[idx])return;
+  if(!confirm('Apagar "'+v[idx].name+'"?'))return;
+  v.splice(idx,1);setV(v);renderSelect();
+}
+function setNow(){var n=new Date();n.setSeconds(n.getSeconds()+5);document.getElementById('ah').value=n.getHours();document.getElementById('am').value=n.getMinutes();document.getElementById('as').value=n.getSeconds();}
+var sendTs=null,cdInt=null;
+function calculate(){
+  var alertEl=document.getElementById('alert'),idx=parseInt(document.getElementById('vsel').value),v=getV();
+  if(isNaN(idx)||!v[idx]){alertEl.textContent='&#9888; Seleciona uma vila de origem.';alertEl.className='alert show';document.getElementById('result').className='result-panel';return;}
+  var vl=v[idx],tx=parseFloat(document.getElementById('tx').value),ty=parseFloat(document.getElementById('ty').value);
+  if(isNaN(tx)||isNaN(ty)){alertEl.textContent='&#9888; Preenche as coordenadas do alvo.';alertEl.className='alert show';document.getElementById('result').className='result-panel';return;}
+  var ah=parseInt(document.getElementById('ah').value)||0,am=parseInt(document.getElementById('am').value)||0,as_=parseInt(document.getElementById('as').value)||0;
+  var dist=Math.sqrt(Math.pow(tx-vl.x,2)+Math.pow(ty-vl.y,2)),trav=dist*SPEED;
+  var now=new Date(),arr=new Date(now);
+  arr.setHours(ah,am,as_,0);
+  if(arr<=now)arr.setDate(arr.getDate()+1);
+  var send=new Date(arr.getTime()-trav*1000),nextDay=send.getDate()!==now.getDate();
+  alertEl.className=send<now?'alert show':'alert';
+  if(send<now)alertEl.textContent='&#9888; Hora de envio j&#225; passou. A calcular para amanh&#227;...';
+  sendTs=send;
+  document.getElementById('send-time').textContent=fmtTime(send);
+  document.getElementById('send-day').textContent=nextDay?' (amanh&#227;)':'';
+  document.getElementById('r-dist').textContent=dist.toFixed(3)+' u';
+  document.getElementById('r-travel').textContent=fmtDur(trav);
+  document.getElementById('r-origin').textContent=vl.name;
+  document.getElementById('r-dest').textContent=tx+'|'+ty;
+  document.getElementById('result').className='result-panel show';
+  if(cdInt)clearInterval(cdInt);
+  updateCd();cdInt=setInterval(updateCd,1000);
+}
+function updateCd(){
+  if(!sendTs)return;
+  var diff=(sendTs-new Date())/1000,el=document.getElementById('countdown');
+  if(diff<=0){el.textContent='ENVIA AGORA';el.className='cd-value now';return;}
+  var h=Math.floor(diff/3600),m=Math.floor((diff%3600)/60),s=Math.floor(diff%60);
+  el.textContent=(h>0?pad(h)+':':'')+pad(m)+':'+pad(s);
+  el.className=diff<60?'cd-value urgent':'cd-value';
+}
+document.getElementById('modal').addEventListener('keydown',function(e){if(e.key==='Enter')saveVillage();if(e.key==='Escape')closeModal();});
+renderSelect();
+</script>
+</body>
+</html>
