@@ -146,7 +146,7 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
 
 <div class="tabs-bar" id="tabs-bar">
   <!-- tabs rendered by JS -->
-  <button class="tab tab-add" onclick="addTab()" title="Novo ataque">+</button>
+  <button class="tab tab-add" id="tab-add-btn" onclick="addTab()" title="Novo ataque">+</button>
 </div>
 
 <div class="container" id="panels-container">
@@ -200,7 +200,7 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
 const TROOPS = [
   {id:'poncho',     name:'Poncho',            spd:6},
   {id:'mariachi',   name:'Mariachi',           spd:7},
-  {id:'caballeria', name:'Caballeria',          spd:14},
+  {id:'caballeria', name:'Cabaleria',          spd:14},
   {id:'conquistador',name:'Conquistador',      spd:14},
   {id:'bombolero',  name:'Bombolero',          spd:4},
   {id:'canhao',     name:'Canh\u00e3o',        spd:3},
@@ -231,9 +231,8 @@ function fmtDur(s){
 // ── RENDER TABS ──
 function renderTabsBar(){
   var bar=document.getElementById('tabs-bar');
-  // remove all except add button
-  while(bar.firstChild && !bar.firstChild.classList.contains('tab-add')) bar.removeChild(bar.firstChild);
-  var addBtn=bar.querySelector('.tab-add');
+  bar.querySelectorAll('.tab:not(.tab-add)').forEach(function(b){b.remove();});
+  var addBtn=document.getElementById('tab-add-btn');
   tabs.forEach(function(t){
     var btn=document.createElement('button');
     btn.className='tab'+(t.id===activeTab?' active':'');
