@@ -196,18 +196,16 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
 </div>
 
 <script>
-// ── TROOP DATA ──
+// ── TROOP DATA (spt = seconds per tile, empirically confirmed where noted) ──
 const TROOPS = [
-  {id:'poncho',     name:'Poncho',            spd:6},
-  {id:'mariachi',   name:'Mariachi',           spd:7},
-  {id:'caballeria', name:'Cabaleria',          spd:14},
-  {id:'conquistador',name:'Conquistador',      spd:14},
-  {id:'bombolero',  name:'Bombolero',          spd:4},
-  {id:'canhao',     name:'Canh\u00e3o',        spd:3},
-  {id:'carroca',    name:'Carro\u00e7a de Tequila', spd:4},
+  {id:'poncho',      name:'Poncho',               spt:600},   // confirmed: 3600/6=600 exact
+  {id:'mariachi',    name:'Mariachi',              spt:514},   // 3600/7≈514 (unconfirmed)
+  {id:'caballeria',  name:'Cabaleria',             spt:257},   // confirmed same as conquistador
+  {id:'conquistador',name:'Conquistador',          spt:257},   // confirmed empirically
+  {id:'bombolero',   name:'Bombolero',             spt:900},   // 3600/4=900 (unconfirmed)
+  {id:'canhao',      name:'Canh\u00e3o',           spt:1200},  // 3600/3=1200 (unconfirmed)
+  {id:'carroca',     name:'Carro\u00e7a de Tequila',spt:900},  // 3600/4=900 (unconfirmed)
 ];
-// speed in tiles/hour → seconds per tile = 3600/spd
-function secsPerTile(spd){ return 3600/spd; }
 
 // ── STORAGE ──
 const VK='wg_villages', FK='wg_favs';
@@ -405,7 +403,7 @@ function renderTroopChips(id){
   TROOPS.forEach(function(tr){
     var chip=document.createElement('label');
     chip.className='troop-chip';
-    chip.innerHTML='<input type="checkbox" value="'+tr.id+'" onchange="onTroopChange(\''+id+'\')"> <span class="troop-name">'+tr.name+'</span><span class="troop-spd">'+tr.spd+'/h</span>';
+    chip.innerHTML='<input type="checkbox" value="'+tr.id+'" onchange="onTroopChange(\''+id+'\')"> <span class="troop-name">'+tr.name+'</span><span class="troop-spd">'+Math.round(3600/tr.spt)+'/h</span>';
     grid.appendChild(chip);
   });
 }
@@ -415,7 +413,7 @@ function onTroopChange(id){
   if(selected.length===0){hint.innerHTML='Seleciona pelo menos uma tropa';}
   else{
     var slowest=getSlowest(selected);
-    hint.innerHTML='Velocidade usada: <span>'+slowest.name+' ('+slowest.spd+'/h)</span>';
+    hint.innerHTML='Velocidade usada: <span>'+slowest.name+' ('+Math.round(3600/slowest.spt)+'/h)</span>';
   }
   // update chips selected state
   document.querySelectorAll('#tg-'+id+' .troop-chip').forEach(function(chip){
@@ -464,7 +462,7 @@ function calculate(id){
 
   var vl=villages[idx],slowest=getSlowest(sel);
   var dist=Math.sqrt(Math.pow(tx-vl.x,2)+Math.pow(ty-vl.y,2));
-  var trav=dist*secsPerTile(slowest.spd);
+  var trav=dist*slowest.spt;
 
   var now=new Date(),arr=new Date(now);
   arr.setHours(ah,am,as_,0);
