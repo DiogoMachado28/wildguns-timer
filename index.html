@@ -133,6 +133,10 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
 .msave{flex:1;background:var(--gold);border:none;border-radius:4px;color:#0e0c0a;font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:0.08em;padding:8px;cursor:pointer;}
 .msave:hover{background:var(--gold-l);}
 .mcancel{background:none;border:1px solid var(--border);border-radius:4px;color:var(--dim);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px 12px;cursor:pointer;}
+
+.modal-result-box {margin-top:12px; padding:10px; background:var(--bg); border-radius:4px; border:1px solid var(--border); text-align:center;}
+.modal-result-box label {display:block; font-size:10px; color:var(--muted); text-transform:uppercase; margin-bottom:4px;}
+.modal-result-box strong {color:var(--gold-l); font-size:18px; font-family:'IBM Plex Mono', monospace;}
 </style>
 </head>
 <body>
@@ -145,15 +149,12 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
 </header>
 
 <div class="tabs-bar" id="tabs-bar">
-  <!-- tabs rendered by JS -->
   <button class="tab tab-add" id="tab-add-btn" onclick="addTab()" title="Novo ataque">+</button>
 </div>
 
 <div class="container" id="panels-container">
-  <!-- panels rendered by JS -->
-</div>
+  </div>
 
-<!-- Village Modal -->
 <div class="mo" id="vmodal">
   <div class="md">
     <h2 id="vm-title">Nova Vila</h2>
@@ -174,7 +175,6 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
   </div>
 </div>
 
-<!-- Fav Target Modal -->
 <div class="mo" id="fmodal">
   <div class="md">
     <h2 id="fm-title">Guardar Alvo</h2>
@@ -195,16 +195,62 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
   </div>
 </div>
 
+<div class="mo" id="arrivalModal">
+  <div class="md">
+    <h2>Calcular chegada</h2>
+    <div class="mf">
+      <label>Duração (hh:mm:ss)</label>
+      <input type="text" id="arr-dur" placeholder="01:20:30">
+    </div>
+    <div class="mf">
+      <label>Hora envio (hh:mm:ss)</label>
+      <input type="text" id="arr-start" placeholder="14:30:00">
+    </div>
+    <div class="merr" id="arr-err">Formato inválido</div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeArrivalModal()">cancelar</button>
+      <button class="msave" onclick="calcArrival()">Calcular</button>
+    </div>
+    <div class="modal-result-box">
+      <label>Chega às</label>
+      <strong id="arr-result">--:--:--</strong>
+    </div>
+  </div>
+</div>
+
+<div class="mo" id="departureModal">
+  <div class="md">
+    <h2>Calcular partida</h2>
+    <div class="mf">
+      <label>Duração (hh:mm:ss)</label>
+      <input type="text" id="dep-dur" placeholder="01:20:30">
+    </div>
+    <div class="mf">
+      <label>Hora chegada desejada (hh:mm:ss)</label>
+      <input type="text" id="dep-target" placeholder="20:00:00">
+    </div>
+    <div class="merr" id="dep-err">Formato inválido</div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeDepartureModal()">cancelar</button>
+      <button class="msave" onclick="calcDeparture()">Calcular</button>
+    </div>
+    <div class="modal-result-box">
+      <label>Deves enviar às</label>
+      <strong id="dep-result">--:--:--</strong>
+    </div>
+  </div>
+</div>
+
 <script>
-// ── TROOP DATA (spt = seconds per tile, empirically confirmed where noted) ──
+// ── TROOP DATA ──
 const TROOPS = [
-  {id:'poncho',      name:'Poncho',               spt:600},   // confirmed: 3600/6=600 exact
-  {id:'mariachi',    name:'Mariachi',              spt:514},   // 3600/7≈514 (unconfirmed)
-  {id:'caballeria',  name:'Cabaleria',             spt:257},   // confirmed same as conquistador
-  {id:'conquistador',name:'Conquistador',          spt:257},   // confirmed empirically
-  {id:'bombolero',   name:'Bombolero',             spt:900},   // 3600/4=900 (unconfirmed)
-  {id:'canhao',      name:'Canh\u00e3o',           spt:1200},  // 3600/3=1200 (unconfirmed)
-  {id:'carroca',     name:'Carro\u00e7a de Tequila',spt:900},  // 3600/4=900 (unconfirmed)
+  {id:'poncho',      name:'Poncho',               spt:600},
+  {id:'mariachi',    name:'Mariachi',              spt:514},
+  {id:'caballeria',  name:'Cabaleria',             spt:257},
+  {id:'conquistador',name:'Conquistador',          spt:257},
+  {id:'bombolero',   name:'Bombolero',             spt:900},
+  {id:'canhao',      name:'Canh\u00e3o',           spt:1200},
+  {id:'carroca',     name:'Carro\u00e7a de Tequila',spt:900},
 ];
 
 // ── STORAGE ──
@@ -215,7 +261,7 @@ function getFavs(){ try{return JSON.parse(localStorage.getItem(FK))||[];}catch{r
 function setFavs(f){ localStorage.setItem(FK,JSON.stringify(f)); }
 
 // ── TABS STATE ──
-var tabs=[]; // [{id, label, troops:Set, countdown_interval}]
+var tabs=[]; 
 var activeTab=null;
 var tabCounter=0;
 
@@ -227,7 +273,6 @@ function fmtDur(s){
   return h>0?h+'h '+pad(m)+'m '+pad(ss)+'s':pad(m)+'m '+pad(ss)+'s';
 }
 
-// ── RENDER TABS ──
 function renderTabsBar(){
   var bar=document.getElementById('tabs-bar');
   bar.querySelectorAll('.tab:not(.tab-add)').forEach(function(b){b.remove();});
@@ -329,7 +374,11 @@ function panelHTML(id){
     '</div>'+
   '</div>'+
 
-  '<button class="calc-btn" onclick="calculate(\''+id+'\')">Calcular hora de envio</button> <button class="calc-btn" style="margin-top:6px;background:#444;color:#fff;" onclick="openArrivalModal()">Calcular chegada</button>'+
+  '<button class="calc-btn" onclick="calculate(\''+id+'\')">Calcular hora de envio</button>' +
+  '<div style="display:flex; gap:6px; margin-bottom:0.9rem;">' +
+    '<button class="calc-btn" style="margin:0; flex:1; background:#444; color:#fff;" onclick="openArrivalModal()">Chegada</button>' +
+    '<button class="calc-btn" style="margin:0; flex:1; background:#444; color:#fff;" onclick="openDepartureModal()">Partida</button>' +
+  '</div>'+
   '<div class="alert" id="al-'+id+'"></div>'+
 
   '<div class="rp" id="rp-'+id+'">'+
@@ -416,7 +465,6 @@ function onTroopChange(id){
     var slowest=getSlowest(selected);
     hint.innerHTML='Velocidade usada: <span>'+slowest.name+' ('+Math.round(3600/slowest.spt)+'/h)</span>';
   }
-  // update chips selected state
   document.querySelectorAll('#tg-'+id+' .troop-chip').forEach(function(chip){
     var cb=chip.querySelector('input');
     chip.className=cb.checked?'troop-chip selected':'troop-chip';
@@ -440,7 +488,6 @@ function resetResult(id){
   if(t&&t.cdInt){clearInterval(t.cdInt);t.cdInt=null;}
 }
 
-// ── NOW ──
 function setNow(id){
   var n=new Date();n.setSeconds(n.getSeconds()+5);
   document.getElementById('ah-'+id).value=n.getHours();
@@ -448,7 +495,6 @@ function setNow(id){
   document.getElementById('as-'+id).value=n.getSeconds();
 }
 
-// ── CALCULATE ──
 function calculate(id){
   var al=document.getElementById('al-'+id);
   var villages=getVillages(),idx=parseInt(document.getElementById('vs-'+id).value);
@@ -478,7 +524,7 @@ function calculate(id){
   document.getElementById('rd-'+id).textContent=dist.toFixed(3)+' u';
   document.getElementById('rt-'+id).textContent=fmtDur(trav);
   document.getElementById('ro-'+id).textContent=vl.name;
-  document.getElementById('rtr-'+id).textContent=slowest.name+' ('+slowest.spd+'/h)';
+  document.getElementById('rtr-'+id).textContent=slowest.name;
   document.getElementById('rp-'+id).className='rp show';
 
   var t=tabs.find(function(x){return x.id===id;});
@@ -496,8 +542,7 @@ function calculate(id){
   if(t)t.cdInt=setInterval(tick,1000);
 }
 
-// ── VILLAGE MODAL ──
-var vmMode='add',vmTabId=null;
+// ── MODALS (Vila, Fav, Chegada, Partida) ──
 function openVModal(mode,tabId){
   vmMode=mode;vmTabId=tabId;
   document.getElementById('vm-err').className='merr';
@@ -515,7 +560,6 @@ function openVModal(mode,tabId){
     document.getElementById('vm-y').value='';
   }
   document.getElementById('vmodal').classList.add('show');
-  setTimeout(function(){document.getElementById('vm-name').focus();},50);
 }
 function closeVModal(){document.getElementById('vmodal').classList.remove('show');}
 function saveVillage(){
@@ -534,10 +578,7 @@ function deleteVillage(tabId){
   v.splice(idx,1);setVillages(v);
   tabs.forEach(function(t){renderVillageSelect(t.id);});
 }
-document.getElementById('vmodal').addEventListener('keydown',function(e){if(e.key==='Enter')saveVillage();if(e.key==='Escape')closeVModal();});
 
-// ── FAV MODAL ──
-var fmTabId=null;
 function openFModal(tabId){
   fmTabId=tabId;
   document.getElementById('fm-err').className='merr';
@@ -546,7 +587,6 @@ function openFModal(tabId){
   document.getElementById('fm-x').value=tx||'';
   document.getElementById('fm-y').value=ty||'';
   document.getElementById('fmodal').classList.add('show');
-  setTimeout(function(){document.getElementById('fm-name').focus();},50);
 }
 function closeFModal(){document.getElementById('fmodal').classList.remove('show');}
 function saveFav(){
@@ -555,62 +595,35 @@ function saveFav(){
   var f=getFavs();f.push({name:name,x:parseFloat(x),y:parseFloat(y)});
   setFavs(f);closeFModal();allRenderFavSelects();
 }
-document.getElementById('fmodal').addEventListener('keydown',function(e){if(e.key==='Enter')saveFav();if(e.key==='Escape')closeFModal();});
+
+function openArrivalModal(){ document.getElementById('arrivalModal').classList.add('show'); }
+function closeArrivalModal(){ document.getElementById('arrivalModal').classList.remove('show'); }
+function calcArrival(){
+  var dur=document.getElementById('arr-dur').value.split(':');
+  var start=document.getElementById('arr-start').value.split(':');
+  if(dur.length!==3 || start.length!==3){document.getElementById('arr-err').className='merr show';return;}
+  var d = parseInt(dur[0])*3600 + parseInt(dur[1])*60 + parseInt(dur[2]);
+  var s = new Date(); s.setHours(start[0],start[1],start[2],0);
+  var res = new Date(s.getTime()+d*1000);
+  document.getElementById('arr-result').textContent = res.toTimeString().split(' ')[0];
+  document.getElementById('arr-err').className='merr';
+}
+
+function openDepartureModal(){ document.getElementById('departureModal').classList.add('show'); }
+function closeDepartureModal(){ document.getElementById('departureModal').classList.remove('show'); }
+function calcDeparture(){
+  var dur=document.getElementById('dep-dur').value.split(':');
+  var target=document.getElementById('dep-target').value.split(':');
+  if(dur.length!==3 || target.length!==3){document.getElementById('dep-err').className='merr show';return;}
+  var dSeconds = parseInt(dur[0])*3600 + parseInt(dur[1])*60 + parseInt(dur[2]);
+  var tDate = new Date(); tDate.setHours(target[0],target[1],target[2],0);
+  var resDate = new Date(tDate.getTime() - dSeconds*1000);
+  document.getElementById('dep-result').textContent = resDate.toTimeString().split(' ')[0];
+  document.getElementById('dep-err').className='merr';
+}
 
 // ── INIT ──
 addTab();
 </script>
-
-<!-- Arrival Modal -->
-<div class="mo" id="arrivalModal">
-  <div class="md">
-    <h2>Calcular chegada</h2>
-    <div class="mf">
-      <label>Duração (hh:mm:ss)</label>
-      <input type="text" id="arr-dur" placeholder="01:20:30">
-    </div>
-    <div class="mf">
-      <label>Hora envio (hh:mm:ss)</label>
-      <input type="text" id="arr-start" placeholder="14:30:00">
-    </div>
-    <div class="merr" id="arr-err">Formato inválido</div>
-    <div class="mbtns">
-      <button class="mcancel" onclick="closeArrivalModal()">cancelar</button>
-      <button class="msave" onclick="calcArrival()">Calcular</button>
-    </div>
-    <div style="margin-top:10px;font-family:monospace;">
-      Chega às: <strong id="arr-result">--:--:--</strong>
-    </div>
-  </div>
-</div>
-
-<script>
-function openArrivalModal(){
-  document.getElementById('arrivalModal').classList.add('show');
-}
-function closeArrivalModal(){
-  document.getElementById('arrivalModal').classList.remove('show');
-}
-function calcArrival(){
-  var dur=document.getElementById('arr-dur').value.split(':');
-  var start=document.getElementById('arr-start').value.split(':');
-
-  if(dur.length!==3 || start.length!==3){
-    document.getElementById('arr-err').className='merr show';
-    return;
-  }
-
-  var d = parseInt(dur[0])*3600 + parseInt(dur[1])*60 + parseInt(dur[2]);
-  var s = new Date();
-  s.setHours(start[0],start[1],start[2],0);
-
-  var res = new Date(s.getTime()+d*1000);
-  document.getElementById('arr-result').textContent =
-    res.toTimeString().split(' ')[0];
-
-  document.getElementById('arr-err').className='merr';
-}
-</script>
-
 </body>
 </html>
