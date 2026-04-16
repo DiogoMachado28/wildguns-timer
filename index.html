@@ -222,7 +222,8 @@ var tabCounter=0;
 function pad(n){return String(Math.floor(Math.abs(n))).padStart(2,'0');}
 function fmtTime(d){return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());}
 function fmtDur(s){
-  var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=Math.floor(s%60);
+  s = Math.round(s);
+  var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;
   return h>0?h+'h '+pad(m)+'m '+pad(ss)+'s':pad(m)+'m '+pad(ss)+'s';
 }
 
@@ -328,7 +329,7 @@ function panelHTML(id){
     '</div>'+
   '</div>'+
 
-  '<button class="calc-btn" onclick="calculate(\''+id+'\')">Calcular hora de envio</button>'+
+  '<button class="calc-btn" onclick="calculate(\''+id+'\')">Calcular hora de envio</button> <button class="calc-btn" style="margin-top:6px;background:#444;color:#fff;" onclick="openArrivalModal()">Calcular chegada</button>'+
   '<div class="alert" id="al-'+id+'"></div>'+
 
   '<div class="rp" id="rp-'+id+'">'+
@@ -429,7 +430,7 @@ function getSelectedTroops(id){
   return res;
 }
 function getSlowest(troops){
-  return troops.reduce(function(a,b){return a.spd<b.spd?a:b;});
+  return troops.reduce(function(a,b){return a.spt > b.spt ? a : b;});
 }
 
 function resetResult(id){
@@ -462,7 +463,7 @@ function calculate(id){
 
   var vl=villages[idx],slowest=getSlowest(sel);
   var dist=Math.sqrt(Math.pow(tx-vl.x,2)+Math.pow(ty-vl.y,2));
-  var trav=dist*slowest.spt;
+  var trav=Math.round(dist*slowest.spt);
 
   var now=new Date(),arr=new Date(now);
   arr.setHours(ah,am,as_,0);
@@ -559,5 +560,57 @@ document.getElementById('fmodal').addEventListener('keydown',function(e){if(e.ke
 // ── INIT ──
 addTab();
 </script>
+
+<!-- Arrival Modal -->
+<div class="mo" id="arrivalModal">
+  <div class="md">
+    <h2>Calcular chegada</h2>
+    <div class="mf">
+      <label>Duração (hh:mm:ss)</label>
+      <input type="text" id="arr-dur" placeholder="01:20:30">
+    </div>
+    <div class="mf">
+      <label>Hora envio (hh:mm:ss)</label>
+      <input type="text" id="arr-start" placeholder="14:30:00">
+    </div>
+    <div class="merr" id="arr-err">Formato inválido</div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeArrivalModal()">cancelar</button>
+      <button class="msave" onclick="calcArrival()">Calcular</button>
+    </div>
+    <div style="margin-top:10px;font-family:monospace;">
+      Chega às: <strong id="arr-result">--:--:--</strong>
+    </div>
+  </div>
+</div>
+
+<script>
+function openArrivalModal(){
+  document.getElementById('arrivalModal').classList.add('show');
+}
+function closeArrivalModal(){
+  document.getElementById('arrivalModal').classList.remove('show');
+}
+function calcArrival(){
+  var dur=document.getElementById('arr-dur').value.split(':');
+  var start=document.getElementById('arr-start').value.split(':');
+
+  if(dur.length!==3 || start.length!==3){
+    document.getElementById('arr-err').className='merr show';
+    return;
+  }
+
+  var d = parseInt(dur[0])*3600 + parseInt(dur[1])*60 + parseInt(dur[2]);
+  var s = new Date();
+  s.setHours(start[0],start[1],start[2],0);
+
+  var res = new Date(s.getTime()+d*1000);
+  document.getElementById('arr-result').textContent =
+    res.toTimeString().split(' ')[0];
+
+  document.getElementById('arr-err').className='merr';
+}
+</script>
+
 </body>
 </html>
