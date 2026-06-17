@@ -133,10 +133,6 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
 .msave{flex:1;background:var(--gold);border:none;border-radius:4px;color:#0e0c0a;font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:0.08em;padding:8px;cursor:pointer;}
 .msave:hover{background:var(--gold-l);}
 .mcancel{background:none;border:1px solid var(--border);border-radius:4px;color:var(--dim);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:8px 12px;cursor:pointer;}
-
-.modal-result-box {margin-top:12px; padding:10px; background:var(--bg); border-radius:4px; border:1px solid var(--border); text-align:center;}
-.modal-result-box label {display:block; font-size:10px; color:var(--muted); text-transform:uppercase; margin-bottom:4px;}
-.modal-result-box strong {color:var(--gold-l); font-size:18px; font-family:'IBM Plex Mono', monospace;}
 </style>
 </head>
 <body>
@@ -144,17 +140,57 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
   <div class="h-icon">&#10022;</div>
   <div>
     <div class="h-title">WildGuns Attack Timer</div>
-    <div class="h-sub">Calculador de tempo de envio</div>
+    <div class="h-sub">Calculador de tempo de envio &middot; Servidor 3x</div>
   </div>
 </header>
 
 <div class="tabs-bar" id="tabs-bar">
+  <!-- tabs rendered by JS -->
+  <button class="tab" id="tab-envio" onclick="switchToEnvio()">&#9654; Envio r&#225;pido</button>
   <button class="tab tab-add" id="tab-add-btn" onclick="addTab()" title="Novo ataque">+</button>
 </div>
 
 <div class="container" id="panels-container">
+  <!-- panels rendered by JS -->
+</div>
+
+<!-- Envio Rápido Panel (static) -->
+<div class="container" style="max-width:560px;margin:0 auto;padding:1.25rem 1rem 4rem;" id="panel-envio" class="attack-panel" style="display:none;">
+  <div class="sl">Dura&#231;&#227;o da viagem</div>
+  <div class="card">
+    <div class="time-grid">
+      <div class="field"><label>Horas</label><input type="number" id="env-dh" placeholder="0" min="0"></div>
+      <div class="field"><label>Minutos</label><input type="number" id="env-dm" placeholder="39" min="0" max="59"></div>
+      <div class="field"><label>Segundos</label><input type="number" id="env-ds" placeholder="29" min="0" max="59"></div>
+      <div style="height:36px;"></div>
+    </div>
+  </div>
+  <div class="sl">Hora de chegada desejada</div>
+  <div class="card">
+    <div class="time-grid">
+      <div class="field"><label>Horas</label><input type="number" id="env-ah" placeholder="14" min="0" max="23"></div>
+      <div class="field"><label>Minutos</label><input type="number" id="env-am" placeholder="30" min="0" max="59"></div>
+      <div class="field"><label>Segundos</label><input type="number" id="env-as" placeholder="00" min="0" max="59"></div>
+      <button class="now-btn" onclick="setEnvNow()">agora</button>
+    </div>
+  </div>
+  <button class="calc-btn" onclick="calcEnvio()">Calcular hora de envio</button>
+  <div class="alert" id="env-alert"></div>
+  <div class="rp" id="env-rp">
+    <div class="rtop">
+      <div class="cdlbl">envia em</div>
+      <div class="cdval" id="env-cd">--:--:--</div>
+      <div class="srow">envia &#224;s <strong id="env-st">--:--:--</strong><span id="env-sd"></span></div>
+    </div>
+    <div class="rbody">
+      <div class="rgrid">
+        <div class="ri"><div class="rl">Chegada</div><div class="rv" id="env-ra">&#8212;</div></div>
+        <div class="ri"><div class="rl">Dura&#231;&#227;o</div><div class="rv" id="env-rd">&#8212;</div></div>
+      </div>
+    </div>
   </div>
 
+<!-- Village Modal -->
 <div class="mo" id="vmodal">
   <div class="md">
     <h2 id="vm-title">Nova Vila</h2>
@@ -175,6 +211,7 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
   </div>
 </div>
 
+<!-- Fav Target Modal -->
 <div class="mo" id="fmodal">
   <div class="md">
     <h2 id="fm-title">Guardar Alvo</h2>
@@ -195,62 +232,21 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
   </div>
 </div>
 
-<div class="mo" id="arrivalModal">
-  <div class="md">
-    <h2>Calcular chegada</h2>
-    <div class="mf">
-      <label>Duração (hh:mm:ss)</label>
-      <input type="text" id="arr-dur" placeholder="01:20:30">
-    </div>
-    <div class="mf">
-      <label>Hora envio (hh:mm:ss)</label>
-      <input type="text" id="arr-start" placeholder="14:30:00">
-    </div>
-    <div class="merr" id="arr-err">Formato inválido</div>
-    <div class="mbtns">
-      <button class="mcancel" onclick="closeArrivalModal()">cancelar</button>
-      <button class="msave" onclick="calcArrival()">Calcular</button>
-    </div>
-    <div class="modal-result-box">
-      <label>Chega às</label>
-      <strong id="arr-result">--:--:--</strong>
-    </div>
-  </div>
-</div>
-
-<div class="mo" id="departureModal">
-  <div class="md">
-    <h2>Calcular partida</h2>
-    <div class="mf">
-      <label>Duração (hh:mm:ss)</label>
-      <input type="text" id="dep-dur" placeholder="01:20:30">
-    </div>
-    <div class="mf">
-      <label>Hora chegada desejada (hh:mm:ss)</label>
-      <input type="text" id="dep-target" placeholder="20:00:00">
-    </div>
-    <div class="merr" id="dep-err">Formato inválido</div>
-    <div class="mbtns">
-      <button class="mcancel" onclick="closeDepartureModal()">cancelar</button>
-      <button class="msave" onclick="calcDeparture()">Calcular</button>
-    </div>
-    <div class="modal-result-box">
-      <label>Deves enviar às</label>
-      <strong id="dep-result">--:--:--</strong>
-    </div>
-  </div>
-</div>
-
 <script>
-// ── TROOP DATA ──
+// ── TROOP DATA (spt = seconds per tile, empirically confirmed where noted) ──
 const TROOPS = [
-  {id:'poncho',      name:'Poncho',               spt:600},
-  {id:'mariachi',    name:'Mariachi',              spt:514},
-  {id:'caballeria',  name:'Cabaleria',             spt:257},
-  {id:'conquistador',name:'Conquistador',          spt:257},
-  {id:'bombolero',   name:'Bombolero',             spt:900},
-  {id:'canhao',      name:'Canh\u00e3o',           spt:1200},
-  {id:'carroca',     name:'Carro\u00e7a de Tequila',spt:900},
+  {id:'poncho',      name:'Poncho',               spt:200},      // 600/3 (servidor 3x)
+  {id:'mariachi',    name:'Mariachi',              spt:171.33},   // 514/3 (servidor 3x)
+  {id:'caballeria',  name:'Cabaleria',             spt:85.67},    // 257/3 (servidor 3x)
+  {id:'conquistador',name:'Conquistador',          spt:85.67},    // 257/3 (servidor 3x)
+  {id:'bombolero',   name:'Bombolero',             spt:300},      // 900/3 (servidor 3x)
+  {id:'canhao',      name:'Canh\u00e3o',           spt:400},      // 1200/3 (servidor 3x)
+  {id:'carroca',     name:'Carro\u00e7a de Tequila',spt:300},     // 900/3 (servidor 3x)
+  {id:'tomahawk',    name:'Tomahawk',             spt:171.43},   // 1200/7 (vel.7, servidor 3x)
+  {id:'homembravo',  name:'Homem-Bravo',          spt:109.09},   // 1200/11 (vel.11, servidor 3x)
+  {id:'fazendeiro',  name:'Fazendeiro',           spt:240},      // 1200/5 (vel.5, servidor 3x)
+  {id:'cowboy',      name:'Cowboy',               spt:75},       // 1200/16 (vel.16, servidor 3x)
+  {id:'corsario',    name:'Corsário',             spt:85.71},    // 1200/14 (vel.14, servidor 3x)
 ];
 
 // ── STORAGE ──
@@ -261,7 +257,7 @@ function getFavs(){ try{return JSON.parse(localStorage.getItem(FK))||[];}catch{r
 function setFavs(f){ localStorage.setItem(FK,JSON.stringify(f)); }
 
 // ── TABS STATE ──
-var tabs=[]; 
+var tabs=[]; // [{id, label, troops:Set, countdown_interval}]
 var activeTab=null;
 var tabCounter=0;
 
@@ -273,6 +269,7 @@ function fmtDur(s){
   return h>0?h+'h '+pad(m)+'m '+pad(ss)+'s':pad(m)+'m '+pad(ss)+'s';
 }
 
+// ── RENDER TABS ──
 function renderTabsBar(){
   var bar=document.getElementById('tabs-bar');
   bar.querySelectorAll('.tab:not(.tab-add)').forEach(function(b){b.remove();});
@@ -293,6 +290,8 @@ function renderTabsBar(){
 function switchTab(id){
   activeTab=id;
   document.querySelectorAll('.attack-panel').forEach(function(p){p.className='attack-panel';});
+  document.getElementById('panel-envio').style.display='none';
+  document.getElementById('tab-envio').className='tab';
   var panel=document.getElementById('panel-'+id);
   if(panel) panel.className='attack-panel active';
   renderTabsBar();
@@ -374,11 +373,7 @@ function panelHTML(id){
     '</div>'+
   '</div>'+
 
-  '<button class="calc-btn" onclick="calculate(\''+id+'\')">Calcular hora de envio</button>' +
-  '<div style="display:flex; gap:6px; margin-bottom:0.9rem;">' +
-    '<button class="calc-btn" style="margin:0; flex:1; background:#444; color:#fff;" onclick="openArrivalModal()">Chegada</button>' +
-    '<button class="calc-btn" style="margin:0; flex:1; background:#444; color:#fff;" onclick="openDepartureModal()">Partida</button>' +
-  '</div>'+
+  '<button class="calc-btn" onclick="calculate(\''+id+'\')">Calcular hora de envio</button> <button class="calc-btn" style="margin-top:6px;background:#444;color:#fff;" onclick="openArrivalModal()">Calcular chegada</button>'+
   '<div class="alert" id="al-'+id+'"></div>'+
 
   '<div class="rp" id="rp-'+id+'">'+
@@ -465,6 +460,7 @@ function onTroopChange(id){
     var slowest=getSlowest(selected);
     hint.innerHTML='Velocidade usada: <span>'+slowest.name+' ('+Math.round(3600/slowest.spt)+'/h)</span>';
   }
+  // update chips selected state
   document.querySelectorAll('#tg-'+id+' .troop-chip').forEach(function(chip){
     var cb=chip.querySelector('input');
     chip.className=cb.checked?'troop-chip selected':'troop-chip';
@@ -488,6 +484,7 @@ function resetResult(id){
   if(t&&t.cdInt){clearInterval(t.cdInt);t.cdInt=null;}
 }
 
+// ── NOW ──
 function setNow(id){
   var n=new Date();n.setSeconds(n.getSeconds()+5);
   document.getElementById('ah-'+id).value=n.getHours();
@@ -495,6 +492,7 @@ function setNow(id){
   document.getElementById('as-'+id).value=n.getSeconds();
 }
 
+// ── CALCULATE ──
 function calculate(id){
   var al=document.getElementById('al-'+id);
   var villages=getVillages(),idx=parseInt(document.getElementById('vs-'+id).value);
@@ -524,7 +522,7 @@ function calculate(id){
   document.getElementById('rd-'+id).textContent=dist.toFixed(3)+' u';
   document.getElementById('rt-'+id).textContent=fmtDur(trav);
   document.getElementById('ro-'+id).textContent=vl.name;
-  document.getElementById('rtr-'+id).textContent=slowest.name;
+  document.getElementById('rtr-'+id).textContent=slowest.name+' ('+slowest.spd+'/h)';
   document.getElementById('rp-'+id).className='rp show';
 
   var t=tabs.find(function(x){return x.id===id;});
@@ -542,7 +540,8 @@ function calculate(id){
   if(t)t.cdInt=setInterval(tick,1000);
 }
 
-// ── MODALS (Vila, Fav, Chegada, Partida) ──
+// ── VILLAGE MODAL ──
+var vmMode='add',vmTabId=null;
 function openVModal(mode,tabId){
   vmMode=mode;vmTabId=tabId;
   document.getElementById('vm-err').className='merr';
@@ -560,6 +559,7 @@ function openVModal(mode,tabId){
     document.getElementById('vm-y').value='';
   }
   document.getElementById('vmodal').classList.add('show');
+  setTimeout(function(){document.getElementById('vm-name').focus();},50);
 }
 function closeVModal(){document.getElementById('vmodal').classList.remove('show');}
 function saveVillage(){
@@ -578,7 +578,10 @@ function deleteVillage(tabId){
   v.splice(idx,1);setVillages(v);
   tabs.forEach(function(t){renderVillageSelect(t.id);});
 }
+document.getElementById('vmodal').addEventListener('keydown',function(e){if(e.key==='Enter')saveVillage();if(e.key==='Escape')closeVModal();});
 
+// ── FAV MODAL ──
+var fmTabId=null;
 function openFModal(tabId){
   fmTabId=tabId;
   document.getElementById('fm-err').className='merr';
@@ -587,6 +590,7 @@ function openFModal(tabId){
   document.getElementById('fm-x').value=tx||'';
   document.getElementById('fm-y').value=ty||'';
   document.getElementById('fmodal').classList.add('show');
+  setTimeout(function(){document.getElementById('fm-name').focus();},50);
 }
 function closeFModal(){document.getElementById('fmodal').classList.remove('show');}
 function saveFav(){
@@ -595,35 +599,116 @@ function saveFav(){
   var f=getFavs();f.push({name:name,x:parseFloat(x),y:parseFloat(y)});
   setFavs(f);closeFModal();allRenderFavSelects();
 }
+document.getElementById('fmodal').addEventListener('keydown',function(e){if(e.key==='Enter')saveFav();if(e.key==='Escape')closeFModal();});
 
-function openArrivalModal(){ document.getElementById('arrivalModal').classList.add('show'); }
-function closeArrivalModal(){ document.getElementById('arrivalModal').classList.remove('show'); }
-function calcArrival(){
-  var dur=document.getElementById('arr-dur').value.split(':');
-  var start=document.getElementById('arr-start').value.split(':');
-  if(dur.length!==3 || start.length!==3){document.getElementById('arr-err').className='merr show';return;}
-  var d = parseInt(dur[0])*3600 + parseInt(dur[1])*60 + parseInt(dur[2]);
-  var s = new Date(); s.setHours(start[0],start[1],start[2],0);
-  var res = new Date(s.getTime()+d*1000);
-  document.getElementById('arr-result').textContent = res.toTimeString().split(' ')[0];
-  document.getElementById('arr-err').className='merr';
+// ── ENVIO RÁPIDO ──
+var envCdInt=null;
+
+function switchToEnvio(){
+  activeTab=null;
+  document.querySelectorAll('.attack-panel').forEach(function(p){p.className='attack-panel';});
+  document.getElementById('panel-envio').style.display='block';
+  renderTabsBar();
+  document.getElementById('tab-envio').className='tab active';
 }
 
-function openDepartureModal(){ document.getElementById('departureModal').classList.add('show'); }
-function closeDepartureModal(){ document.getElementById('departureModal').classList.remove('show'); }
-function calcDeparture(){
-  var dur=document.getElementById('dep-dur').value.split(':');
-  var target=document.getElementById('dep-target').value.split(':');
-  if(dur.length!==3 || target.length!==3){document.getElementById('dep-err').className='merr show';return;}
-  var dSeconds = parseInt(dur[0])*3600 + parseInt(dur[1])*60 + parseInt(dur[2]);
-  var tDate = new Date(); tDate.setHours(target[0],target[1],target[2],0);
-  var resDate = new Date(tDate.getTime() - dSeconds*1000);
-  document.getElementById('dep-result').textContent = resDate.toTimeString().split(' ')[0];
-  document.getElementById('dep-err').className='merr';
+function setEnvNow(){
+  var n=new Date();
+  document.getElementById('env-ah').value=n.getHours();
+  document.getElementById('env-am').value=n.getMinutes();
+  document.getElementById('env-as').value=n.getSeconds();
+}
+
+function calcEnvio(){
+  var dh=parseInt(document.getElementById('env-dh').value)||0;
+  var dm=parseInt(document.getElementById('env-dm').value)||0;
+  var ds=parseInt(document.getElementById('env-ds').value)||0;
+  var ah=parseInt(document.getElementById('env-ah').value)||0;
+  var am=parseInt(document.getElementById('env-am').value)||0;
+  var as_=parseInt(document.getElementById('env-as').value)||0;
+  var al=document.getElementById('env-alert');
+  var durSecs=dh*3600+dm*60+ds;
+  if(durSecs===0){al.textContent='⚠ Introduz a duração da viagem.';al.className='alert show';document.getElementById('env-rp').className='rp';return;}
+  al.className='alert';
+  var now=new Date(),arr=new Date(now);
+  arr.setHours(ah,am,as_,0);
+  if(arr<=now)arr.setDate(arr.getDate()+1);
+  var send=new Date(arr.getTime()-durSecs*1000);
+  var nextDay=send.getDate()!==now.getDate();
+  if(send<now){al.textContent='⚠ Hora de envio já passou. A calcular para amanhã...';al.className='alert show';}
+  document.getElementById('env-st').textContent=fmtTime(send);
+  document.getElementById('env-sd').textContent=nextDay?' (amanhã)':'';
+  document.getElementById('env-ra').textContent=fmtTime(arr);
+  document.getElementById('env-rd').textContent=fmtDur(durSecs);
+  document.getElementById('env-rp').className='rp show';
+  if(envCdInt)clearInterval(envCdInt);
+  var sendTs=send;
+  function tick(){
+    var diff=(sendTs-new Date())/1000,el=document.getElementById('env-cd');
+    if(!el)return;
+    if(diff<=0){el.textContent='ENVIA AGORA';el.className='cdval now';return;}
+    var h=Math.floor(diff/3600),m=Math.floor((diff%3600)/60),s=Math.floor(diff%60);
+    el.textContent=(h>0?pad(h)+':':'')+pad(m)+':'+pad(s);
+    el.className=diff<60?'cdval urgent':'cdval';
+  }
+  tick();
+  envCdInt=setInterval(tick,1000);
 }
 
 // ── INIT ──
 addTab();
 </script>
+
+<!-- Arrival Modal -->
+<div class="mo" id="arrivalModal">
+  <div class="md">
+    <h2>Calcular chegada</h2>
+    <div class="mf">
+      <label>Duração (hh:mm:ss)</label>
+      <input type="text" id="arr-dur" placeholder="01:20:30">
+    </div>
+    <div class="mf">
+      <label>Hora envio (hh:mm:ss)</label>
+      <input type="text" id="arr-start" placeholder="14:30:00">
+    </div>
+    <div class="merr" id="arr-err">Formato inválido</div>
+    <div class="mbtns">
+      <button class="mcancel" onclick="closeArrivalModal()">cancelar</button>
+      <button class="msave" onclick="calcArrival()">Calcular</button>
+    </div>
+    <div style="margin-top:10px;font-family:monospace;">
+      Chega às: <strong id="arr-result">--:--:--</strong>
+    </div>
+  </div>
+</div>
+
+<script>
+function openArrivalModal(){
+  document.getElementById('arrivalModal').classList.add('show');
+}
+function closeArrivalModal(){
+  document.getElementById('arrivalModal').classList.remove('show');
+}
+function calcArrival(){
+  var dur=document.getElementById('arr-dur').value.split(':');
+  var start=document.getElementById('arr-start').value.split(':');
+
+  if(dur.length!==3 || start.length!==3){
+    document.getElementById('arr-err').className='merr show';
+    return;
+  }
+
+  var d = parseInt(dur[0])*3600 + parseInt(dur[1])*60 + parseInt(dur[2]);
+  var s = new Date();
+  s.setHours(start[0],start[1],start[2],0);
+
+  var res = new Date(s.getTime()+d*1000);
+  document.getElementById('arr-result').textContent =
+    res.toTimeString().split(' ')[0];
+
+  document.getElementById('arr-err').className='merr';
+}
+</script>
+
 </body>
 </html>
