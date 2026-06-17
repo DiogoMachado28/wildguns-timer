@@ -236,18 +236,18 @@ header{border-bottom:1px solid var(--border);padding:0.9rem 1.25rem;display:flex
 <script>
 // ── TROOP DATA (spt = seconds per tile, empirically confirmed where noted) ──
 const TROOPS = [
-  {id:'poncho',      name:'Poncho',               vel:6,  spt:200},      // 600/3 (servidor 3x)
-  {id:'mariachi',    name:'Mariachi',              vel:7,  spt:171.33},   // 514/3 (servidor 3x)
-  {id:'caballeria',  name:'Cabaleria',             vel:14, spt:85.67},    // 257/3 (servidor 3x)
-  {id:'conquistador',name:'Conquistador',          vel:14, spt:85.67},    // 257/3 (servidor 3x)
-  {id:'bombolero',   name:'Bombolero',             vel:4,  spt:300},      // 900/3 (servidor 3x)
-  {id:'canhao',      name:'Canh\u00e3o',           vel:3,  spt:400},      // 1200/3 (servidor 3x)
-  {id:'carroca',     name:'Carro\u00e7a de Tequila',vel:4, spt:300},      // 900/3 (servidor 3x)
-  {id:'tomahawk',    name:'Tomahawk',             vel:7,  spt:171.43},   // 1200/7 (servidor 3x)
-  {id:'homembravo',  name:'Homem-Bravo',          vel:11, spt:109.09},   // 1200/11 (servidor 3x)
-  {id:'fazendeiro',  name:'Fazendeiro',           vel:5,  spt:240},      // 1200/5 (servidor 3x)
-  {id:'cowboy',      name:'Cowboy',               vel:16, spt:75},       // 1200/16 (servidor 3x)
-  {id:'corsario',    name:'Corsário',             vel:14, spt:85.71},    // 1200/14 (servidor 3x)
+  {id:'poncho',      name:'Poncho',               vel:6,  spt:600/3},      // servidor 3x
+  {id:'mariachi',    name:'Mariachi',              vel:7,  spt:514/3},     // servidor 3x
+  {id:'caballeria',  name:'Cabaleria',             vel:14, spt:257/3},     // servidor 3x
+  {id:'conquistador',name:'Conquistador',          vel:14, spt:257/3},     // servidor 3x
+  {id:'bombolero',   name:'Bombolero',             vel:4,  spt:900/3},     // servidor 3x
+  {id:'canhao',      name:'Canh\u00e3o',           vel:3,  spt:1200/3},    // servidor 3x
+  {id:'carroca',     name:'Carro\u00e7a de Tequila',vel:4, spt:900/3},     // servidor 3x
+  {id:'tomahawk',    name:'Tomahawk',             vel:7,  spt:1200/7},     // servidor 3x
+  {id:'homembravo',  name:'Homem-Bravo',          vel:11, spt:1200/11},    // servidor 3x
+  {id:'fazendeiro',  name:'Fazendeiro',           vel:5,  spt:1200/5},     // servidor 3x
+  {id:'cowboy',      name:'Cowboy',               vel:16, spt:1200/16},   // servidor 3x
+  {id:'corsario',    name:'Corsário',             vel:14, spt:1200/14},   // servidor 3x
 ];
 
 // ── STORAGE ──
@@ -508,7 +508,7 @@ function calculate(id){
 
   var vl=villages[idx],slowest=getSlowest(sel);
   var dist=Math.sqrt(Math.pow(tx-vl.x,2)+Math.pow(ty-vl.y,2));
-  var trav=Math.round(dist*slowest.spt);
+  var trav=Math.floor(dist*slowest.spt);
 
   var now=new Date(),arr=new Date(now);
   arr.setHours(ah,am,as_,0);
